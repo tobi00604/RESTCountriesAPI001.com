@@ -1,1 +1,646 @@
-メンテナンス中です
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>世界の国々 - 国情報表示アプリ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .search-section {
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .search-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .country-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border-left: 5px solid #4facfe;
+        }
+
+        .country-header {
+            margin-bottom: 20px;
+        }
+
+        .country-name {
+            text-align: center;
+        }
+
+        .country-name h2 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+        }
+
+        .country-name .native-name {
+            color: #7f8c8d;
+            font-size: 1.1em;
+            font-style: italic;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+
+        .info-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #4facfe;
+            padding-bottom: 8px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .info-item strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .languages, .currencies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .map-link {
+            display: inline-block;
+            background: #4facfe;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .map-link:hover {
+            background: #339cf3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .error {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #e53e3e;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .search-section {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .search-section {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .country-header {
+                text-align: center;
+            }
+            
+            .country-name h2 {
+                font-size: 1.8em;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 世界の国々</h1>
+            <p>REST Countries APIを使用した国情報表示アプリ</p>
+        </div>
+        
+        <div class="content">
+            <div class="search-section">
+                <div class="search-group">
+                    <label for="countrySelect">国名（英語）</label>
+                    <select id="countrySelect">
+                        <option value="">読み込み中...</option>
+                    </select>
+                </div>
+                <div class="search-group">
+                    <label for="isoSelect">ISO 3166-1 alpha-2</label>
+                    <select id="isoSelect">
+                        <option value="">読み込み中...</option>
+                    </select>
+                </div>
+                <div class="search-group">
+                    <label for="iso3Select">ISO 3166-1 alpha-3</label>
+                    <select id="iso3Select">
+                        <option value="">読み込み中...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="countryInfo"></div>
+        </div>
+        <center>当ページのhtmlファイルはGitHubで公開しています。⇒<a href="https://github.com/tobi00604/RESTCountriesAPI001.com/blob/main/index.html" target="_blank"><b>こちら</b></a></center>
+    </div>
+
+    <script>
+        const countrySelect = document.getElementById('countrySelect');
+        const isoSelect = document.getElementById('isoSelect');
+        const iso3Select = document.getElementById('iso3Select');
+        const countryInfo = document.getElementById('countryInfo');
+        let countriesData = [];
+
+        // 国のリストを取得
+        async function loadCountries() {
+            try {
+                const response = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,cca3');
+                if (!response.ok) throw new Error('データの取得に失敗しました');
+                
+                const countries = await response.json();
+                countriesData = countries.sort((a, b) => 
+                    a.name.common.localeCompare(b.name.common)
+                );
+                
+                // 国名プルダウンにオプションを追加
+                countrySelect.innerHTML = '<option value="">国名で選択</option>';
+                countriesData.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.cca2;
+                    option.textContent = country.name.common;
+                    countrySelect.appendChild(option);
+                });
+                
+                // 2文字ISOコードプルダウンにオプションを追加
+                const sortedByISO2 = [...countriesData].sort((a, b) => a.cca2.localeCompare(b.cca2));
+                isoSelect.innerHTML = '<option value="">2文字コードで選択</option>';
+                sortedByISO2.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.cca2;
+                    option.textContent = `${country.cca2} - ${country.name.common}`;
+                    isoSelect.appendChild(option);
+                });
+                
+                // 3文字ISOコードプルダウンにオプションを追加
+                const sortedByISO3 = [...countriesData].sort((a, b) => a.cca3.localeCompare(b.cca3));
+                iso3Select.innerHTML = '<option value="">3文字コードで選択</option>';
+                sortedByISO3.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.cca2; // APIでは2文字コードで検索する
+                    option.textContent = `${country.cca3} - ${country.name.common}`;
+                    iso3Select.appendChild(option);
+                });
+                
+            } catch (error) {
+                countrySelect.innerHTML = '<option value="">エラー: データを読み込めませんでした</option>';
+                isoSelect.innerHTML = '<option value="">エラー: データを読み込めませんでした</option>';
+                iso3Select.innerHTML = '<option value="">エラー: データを読み込めませんでした</option>';
+                console.error('Error:', error);
+            }
+        }
+
+        // 選択された国の詳細情報を取得
+        async function loadCountryDetails(countryCode) {
+            if (!countryCode) {
+                countryInfo.innerHTML = '';
+                return;
+            }
+
+            // 全てのプルダウンを同期
+            if (countrySelect.value !== countryCode) {
+                countrySelect.value = countryCode;
+            }
+            if (isoSelect.value !== countryCode) {
+                isoSelect.value = countryCode;
+            }
+            if (iso3Select.value !== countryCode) {
+                iso3Select.value = countryCode;
+            }
+
+            countryInfo.innerHTML = '<div class="loading">🔄 国の詳細情報を読み込み中...</div>';
+
+            try {
+                const response = await fetch(`https://restcountries.com/v3.1/alpha/${countryCode}`);
+                if (!response.ok) throw new Error('詳細情報の取得に失敗しました');
+                
+                const [country] = await response.json();
+                displayCountryInfo(country);
+                
+            } catch (error) {
+                countryInfo.innerHTML = '<div class="error">❌ 国の詳細情報を取得できませんでした。</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        // 国の情報を表示
+        function displayCountryInfo(country) {
+            const nativeName = country.name.nativeName ? 
+                Object.values(country.name.nativeName)[0].common : 
+                country.name.common;
+
+            const languages = country.languages ? 
+                Object.values(country.languages).map(lang => 
+                    `<span class="tag">${lang}</span>`
+                ).join('') : '情報なし';
+
+            const currencies = country.currencies ? 
+                Object.values(country.currencies).map(curr => 
+                    `<span class="tag">${curr.name} (${curr.symbol || ''})</span>`
+                ).join('') : '情報なし';
+
+            // 日本語翻訳用の辞書
+            const regionTranslations = {
+                'Africa': 'アフリカ',
+                'Americas': 'アメリカ大陸',
+                'Asia': 'アジア',
+                'Europe': 'ヨーロッパ',
+                'Oceania': 'オセアニア',
+                'Antarctic': '南極'
+            };
+
+            const subregionTranslations = {
+                'Eastern Africa': '東アフリカ',
+                'Middle Africa': '中央アフリカ',
+                'Northern Africa': '北アフリカ',
+                'Southern Africa': '南部アフリカ',
+                'Western Africa': '西アフリカ',
+                'Caribbean': 'カリブ海',
+                'Central America': '中央アメリカ',
+                'North America': '北アメリカ',
+                'South America': '南アメリカ',
+                'Central Asia': '中央アジア',
+                'Eastern Asia': '東アジア',
+                'South-Eastern Asia': '東南アジア',
+                'Southern Asia': '南アジア',
+                'Western Asia': '西アジア',
+                'Eastern Europe': '東ヨーロッパ',
+                'Northern Europe': '北ヨーロッパ',
+                'Southern Europe': '南ヨーロッパ',
+                'Western Europe': '西ヨーロッパ',
+                'Australia and New Zealand': 'オーストラリア・ニュージーランド',
+                'Melanesia': 'メラネシア',
+                'Micronesia': 'ミクロネシア',
+                'Polynesia': 'ポリネシア'
+            };
+
+            const countryTranslations = {
+                'Japan': '日本',
+                'United States': 'アメリカ合衆国',
+                'China': '中国',
+                'South Korea': '韓国',
+                'North Korea': '北朝鮮',
+                'United Kingdom': 'イギリス',
+                'France': 'フランス',
+                'Germany': 'ドイツ',
+                'Italy': 'イタリア',
+                'Spain': 'スペイン',
+                'Russia': 'ロシア',
+                'Canada': 'カナダ',
+                'Australia': 'オーストラリア',
+                'Brazil': 'ブラジル',
+                'India': 'インド',
+                'Thailand': 'タイ',
+                'Vietnam': 'ベトナム',
+                'Philippines': 'フィリピン',
+                'Indonesia': 'インドネシア',
+                'Malaysia': 'マレーシア',
+                'Singapore': 'シンガポール',
+                'Taiwan': '台湾',
+                'Hong Kong': '香港',
+                'Mexico': 'メキシコ',
+                'Egypt': 'エジプト',
+                'South Africa': '南アフリカ',
+                'Turkey': 'トルコ',
+                'Iran': 'イラン',
+                'Iraq': 'イラク',
+                'Saudi Arabia': 'サウジアラビア',
+                'Israel': 'イスラエル',
+                'Palestine': 'パレスチナ',
+                'Switzerland': 'スイス',
+                'Netherlands': 'オランダ',
+                'Belgium': 'ベルギー',
+                'Austria': 'オーストリア',
+                'Sweden': 'スウェーデン',
+                'Norway': 'ノルウェー',
+                'Denmark': 'デンマーク',
+                'Finland': 'フィンランド',
+                'Poland': 'ポーランド',
+                'Czech Republic': 'チェコ',
+                'Slovakia': 'スロバキア',
+                'Hungary': 'ハンガリー',
+                'Romania': 'ルーマニア',
+                'Bulgaria': 'ブルガリア',
+                'Greece': 'ギリシャ',
+                'Portugal': 'ポルトガル',
+                'Ireland': 'アイルランド',
+                'Iceland': 'アイスランド',
+                'Argentina': 'アルゼンチン',
+                'Chile': 'チリ',
+                'Peru': 'ペルー',
+                'Colombia': 'コロンビア',
+                'Venezuela': 'ベネズエラ',
+                'Uruguay': 'ウルグアイ',
+                'Paraguay': 'パラグアイ',
+                'Bolivia': 'ボリビア',
+                'Ecuador': 'エクアドル',
+                'New Zealand': 'ニュージーランド'
+            };
+
+            const capitalTranslations = {
+                'Tokyo': '東京',
+                'Washington, D.C.': 'ワシントンD.C.',
+                'Beijing': '北京',
+                'Seoul': 'ソウル',
+                'Pyongyang': '平壌',
+                'London': 'ロンドン',
+                'Paris': 'パリ',
+                'Berlin': 'ベルリン',
+                'Rome': 'ローマ',
+                'Madrid': 'マドリード',
+                'Moscow': 'モスクワ',
+                'Ottawa': 'オタワ',
+                'Canberra': 'キャンベラ',
+                'Brasília': 'ブラジリア',
+                'New Delhi': 'ニューデリー',
+                'Bangkok': 'バンコク',
+                'Hanoi': 'ハノイ',
+                'Manila': 'マニラ',
+                'Jakarta': 'ジャカルタ',
+                'Kuala Lumpur': 'クアラルンプール',
+                'Singapore': 'シンガポール',
+                'Taipei': '台北',
+                'Mexico City': 'メキシコシティ',
+                'Cairo': 'カイロ',
+                'Cape Town': 'ケープタウン',
+                'Ankara': 'アンカラ',
+                'Tehran': 'テヘラン',
+                'Baghdad': 'バグダッド',
+                'Riyadh': 'リヤド',
+                'Jerusalem': 'エルサレム',
+                'Bern': 'ベルン',
+                'Amsterdam': 'アムステルダム',
+                'Brussels': 'ブリュッセル',
+                'Vienna': 'ウィーン',
+                'Stockholm': 'ストックホルム',
+                'Oslo': 'オスロ',
+                'Copenhagen': 'コペンハーゲン',
+                'Helsinki': 'ヘルシンキ',
+                'Warsaw': 'ワルシャワ',
+                'Prague': 'プラハ',
+                'Bratislava': 'ブラチスラバ',
+                'Budapest': 'ブダペスト',
+                'Bucharest': 'ブカレスト',
+                'Sofia': 'ソフィア',
+                'Athens': 'アテネ',
+                'Lisbon': 'リスボン',
+                'Dublin': 'ダブリン',
+                'Reykjavik': 'レイキャビク',
+                'Buenos Aires': 'ブエノスアイレス',
+                'Santiago': 'サンティアゴ',
+                'Lima': 'リマ',
+                'Bogotá': 'ボゴタ',
+                'Caracas': 'カラカス',
+                'Montevideo': 'モンテビデオ',
+                'Asunción': 'アスンシオン',
+                'La Paz': 'ラパス',
+                'Quito': 'キト',
+                'Wellington': 'ウェリントン'
+            };
+
+            const region = country.region || '情報なし';
+            const subregion = country.subregion || '情報なし';
+            const capital = country.capital ? country.capital.join(', ') : '情報なし';
+
+            // 日本語表記を追加
+            const regionWithJapanese = region !== '情報なし' && regionTranslations[region] ? 
+                `${region} (${regionTranslations[region]})` : region;
+            
+            const subregionWithJapanese = subregion !== '情報なし' && subregionTranslations[subregion] ? 
+                `${subregion} (${subregionTranslations[subregion]})` : subregion;
+            
+            const countryNameWithJapanese = countryTranslations[country.name.common] ? 
+                `${country.name.common} (${countryTranslations[country.name.common]})` : country.name.common;
+            
+            const capitalWithJapanese = capital !== '情報なし' && capitalTranslations[capital] ? 
+                `${capital} (${capitalTranslations[capital]})` : capital;
+            const population = country.population ? country.population.toLocaleString() : '情報なし';
+            const area = country.area ? `${country.area.toLocaleString()} km²` : '情報なし';
+            const timezones = country.timezones ? country.timezones.join(', ') : '情報なし';
+            
+            // 日本との時差を計算
+            function calculateTimeDifference(timezones) {
+                if (!timezones || timezones.length === 0) return '計算できません';
+                
+                // 日本の標準時間は UTC+9
+                const japanOffset = 9;
+                const timeDifferences = [];
+                
+                timezones.forEach(tz => {
+                    if (tz === 'UTC') {
+                        timeDifferences.push(`-${japanOffset}時間`);
+                    } else {
+                        const match = tz.match(/UTC([+-])(\d{1,2}):?(\d{0,2})/);
+                        if (match) {
+                            const sign = match[1];
+                            const hours = parseInt(match[2]);
+                            const minutes = match[3] ? parseInt(match[3]) : 0;
+                            
+                            let offsetHours = hours + (minutes / 60);
+                            if (sign === '-') offsetHours = -offsetHours;
+                            
+                            const difference = offsetHours - japanOffset;
+                            if (difference === 0) {
+                                timeDifferences.push('時差なし');
+                            } else if (difference > 0) {
+                                timeDifferences.push(`+${difference}時間`);
+                            } else {
+                                timeDifferences.push(`${difference}時間`);
+                            }
+                        }
+                    }
+                });
+                
+                return timeDifferences.length > 0 ? [...new Set(timeDifferences)].join(', ') : '計算できません';
+            }
+            
+            const timeDifference = calculateTimeDifference(country.timezones);
+            const borders = country.borders ? 
+                `${country.borders.length}カ国 (${country.borders.join(', ')})` : 
+                'なし';
+
+            countryInfo.innerHTML = `
+                <div class="country-info">
+                    <div class="country-header">
+                        <div class="country-name">
+                            <h2>${countryNameWithJapanese}</h2>
+                            <div class="native-name">${nativeName}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <h3>🏛️ 基本情報</h3>
+                            <div class="info-item"><strong>首都:</strong> ${capitalWithJapanese}</div>
+                            <div class="info-item"><strong>地域:</strong> ${regionWithJapanese}</div>
+                            <div class="info-item"><strong>副地域:</strong> ${subregionWithJapanese}</div>
+                            <div class="info-item"><strong>人口:</strong> ${population}人</div>
+                            <div class="info-item"><strong>面積:</strong> ${area}</div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <h3>🗣️ 言語・通貨</h3>
+                            <div class="info-item">
+                                <strong>公用語:</strong>
+                                <div class="languages">${languages}</div>
+                            </div>
+                            <div class="info-item">
+                                <strong>通貨:</strong>
+                                <div class="currencies">${currencies}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <h3>🌐 その他の情報</h3>
+                            <div class="info-item"><strong>タイムゾーン:</strong> ${timezones}</div>
+                            <div class="info-item"><strong>日本との時差:</strong> ${timeDifference}</div>
+                            <div class="info-item"><strong>国境を接する国:</strong> ${borders}</div>
+                            <div class="info-item"><strong>国コード:</strong> ${country.cca2} / ${country.cca3}</div>
+                            ${country.maps?.googleMaps ? 
+                                `<a href="${country.maps.googleMaps}" target="_blank" class="map-link">🗺️ Google Mapsで見る</a>` : 
+                                ''
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // イベントリスナー
+        countrySelect.addEventListener('change', (e) => {
+            loadCountryDetails(e.target.value);
+        });
+
+        isoSelect.addEventListener('change', (e) => {
+            loadCountryDetails(e.target.value);
+        });
+
+        iso3Select.addEventListener('change', (e) => {
+            loadCountryDetails(e.target.value);
+        });
+
+        // 初期化
+        loadCountries();
+    </script>
+</body>
+</html>
